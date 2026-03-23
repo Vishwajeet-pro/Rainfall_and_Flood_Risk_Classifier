@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flood Risk Classifier - Analytics</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+<nav class="bg-blue-600 shadow-lg">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <a href="/" class="text-white text-2xl font-bold flex items-center">
+                    <i class="bi bi-water mr-2"></i>Flood Risk Classifier
+                </a>
+                <div class="hidden md:flex space-x-6">
+                    <a href="/" class="text-white hover:text-blue-200 px-3 py-2 rounded transition active:bg-blue-700">Predictor</a>
+                    <a href="/analytics" class="text-white hover:text-blue-200 px-3 py-2 rounded transition active:bg-blue-700">Analytics</a>
+                </div>
+                <button class="md:hidden text-white">
+                    <i class="bi bi-list text-2xl"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+<div class="max-w-6xl mx-auto my-12 px-4 md:px-10">
+        <!-- Dashboard Image Section -->
+        <div class="text-center mb-12">
+            <h1 class="text-5xl md:text-6xl font-black text-blue-600 mb-6">Power BI Dashboard</h1>
+            <p class="text-2xl text-gray-600 mb-8">Visualizing flood risk predictions and patterns</p>
+            <img src="../static/images/image.png" class="w-full max-h-[70vh] object-cover rounded-3xl shadow-2xl" alt="Power BI Dashboard Visual">
+        </div>
+
+        <!-- Technical Insights Section -->
+        <div class="max-w-4xl mx-auto">
+            <div class="bg-gradient-to-r from-purple-500 via-purple-600 to-indigo-600 text-white p-12 rounded-3xl shadow-2xl text-center">
+                <h2 class="text-4xl font-bold mb-8 flex items-center justify-center mx-auto">
+                    <i class="bi bi-lightbulb-fill mr-3 text-3xl"></i>Technical Insights
+                </h2>
+                <p class="text-xl mb-10 leading-relaxed opacity-95 max-w-3xl mx-auto">
+                    This analysis utilizes the Gini Importance from our Random Forest model to identify which environmental and infrastructural factors have the highest correlation with flood probability.
+                </p>
+                <h4 class="text-2xl font-bold mb-8">Top 5 Flood Drivers</h4>
+                <ol class="space-y-4 max-w-2xl mx-auto">
+                    <li class="p-6 bg-white/20 backdrop-blur-sm rounded-2xl font-semibold text-xl">1. deteriorating infrastructure (Importance: 0.059)</li>
+                    <li class="p-6 bg-white/20 backdrop-blur-sm rounded-2xl font-semibold text-xl">2. ineffectiveDisasterPreparedness (Importance: 0.057)</li>
+                    <li class="p-6 bg-white/20 backdrop-blur-sm rounded-2xl font-semibold text-xl">3. Siltation (Importance: 0.057)</li>
+                    <li class="p-6 bg-white/20 backdrop-blur-sm rounded-2xl font-semibold text-xl">4. Urbanization (Importance: 0.055)</li>
+                    <li class="p-6 bg-white/20 backdrop-blur-sm rounded-2xl font-semibold text-xl">5. TopographyDrainage (Importance: 0.055)</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+
+</body>
+</html>
+
