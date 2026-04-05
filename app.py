@@ -3,6 +3,7 @@ import pickle
 import numpy as np
 import requests
 from datetime import datetime
+from roadmap_engine import IMPROVEMENTS, apply_improvements, calculate_risk, suggest_roadmap
 
 app = Flask(__name__)
 
@@ -143,6 +144,74 @@ def simulator():
 @app.route('/analytics')
 def analytics():
     return render_template('analytics.html')
+
+@app.route('/roadmap')
+def roadmap():
+    return render_template('roadmap.html', regions=list(REGIONAL_PROFILES.keys()), improvements=IMPROVEMENTS)
+
+@app.route('/generate_roadmap', methods=['POST'])
+def generate_roadmap():
+    try:
+        data = request.get_json()
+        rainfall_mm = float(data.get('rainfall_mm', 0))
+        region = data.get('region', 'Bangladesh')
+        selected_ids = data.get('selected_improvements', [])
+        if not isinstance(selected_ids, list):
+            selected_ids = []
+
+        budget = data.get('budget', None)
+        if budget is not None and budget != '':
+            try:
+                budget = float(budget)
+            except ValueError:
+                budget = None
+        else:
+            budget = None
+
+        if rainfall_mm < 0 or rainfall_mm > 300:
+            return jsonify({'success': False, 'error': 'Rainfall must be between 0 and 300 mm'}), 400
+
+        baseline_features = rainfall_to_features(rainfall_mm, region)
+        baseline_risk = calculate_risk(model, baseline_features, FEATURE_NAMES)
+
+        improved_features = apply_improvements(baseline_features, selected_ids) if selected_ids else baseline_features
+        improved_risk = calculate_risk(model, improved_features, FEATURE_NAMES)
+
+        selected_improvements = []
+        selected_cost_usd = 0
+        for imp_id in selected_ids:
+            imp = next((item for item in IMPROVEMENTS if item['id'] == imp_id), None)
+            if imp:
+                selected_cost_usd += imp['cost_usd']
+                selected_improvements.append({
+                    'id': imp['id'],
+                    'name': imp['name'],
+                    'category': imp['category'],
+                    'cost_usd': imp['cost_usd'],
+                    'cost_display': f"${imp['cost_usd']:,}",
+                    'timeline_years': imp['timeline_years'],
+                    'impact': imp['impact']
+                })
+
+        roadmap_data = suggest_roadmap(model, baseline_features, FEATURE_NAMES, budget)
+
+        return jsonify({
+            'success': True,
+            'region': region,
+            'rainfall_mm': rainfall_mm,
+            'baseline_risk': baseline_risk,
+            'improved_risk': improved_risk,
+            'selected_improvements': selected_improvements,
+            'selected_cost_usd': selected_cost_usd,
+            'recommended_improvements': roadmap_data['recommendations'],
+            'budget_usd': roadmap_data['budget_usd'],
+            'budget_remaining_usd': roadmap_data['budget_remaining_usd'],
+            'total_cost_usd': roadmap_data['total_cost_usd']
+        })
+    except ValueError as e:
+        return jsonify({'success': False, 'error': f'Invalid input: {str(e)}'}), 400
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'Roadmap generation error: {str(e)}'}), 500
 
 @app.route('/get_weather', methods=['POST'])
 def get_weather():

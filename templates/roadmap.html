@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flood Risk Roadmap Generator</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .risk-badge { padding: 12px 24px; border-radius: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+        .risk-low { background-color: #d4edda; color: #155724; }
+        .risk-medium { background-color: #fff3cd; color: #856404; }
+        .risk-high { background-color: #f8d7da; color: #721c24; }
+        .improvement-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .improvement-card:hover { transform: translateY(-2px); box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08); }
+    </style>
+</head>
+<body>
+    <nav class="bg-blue-600 shadow-lg">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <a href="/" class="text-white text-2xl font-bold flex items-center">
+                    <i class="bi bi-water mr-2"></i>Flood Risk Classifier
+                </a>
+                <div class="hidden md:flex space-x-6">
+                    <a href="/" class="text-white hover:text-blue-200 px-3 py-2 rounded transition">Predictor</a>
+                    <a href="/simulator" class="text-white hover:text-blue-200 px-3 py-2 rounded transition">Simulator</a>
+                    <a href="/roadmap" class="text-white hover:text-blue-200 px-3 py-2 rounded transition active:bg-blue-700 bg-blue-700">Roadmap</a>
+                    <a href="/analytics" class="text-white hover:text-blue-200 px-3 py-2 rounded transition">Analytics</a>
+                </div>
+                <button class="md:hidden text-white">
+                    <i class="bi bi-list text-2xl"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto my-12 px-4 md:px-10">
+        <div class="bg-white rounded-3xl p-10 shadow-2xl mb-10">
+            <h1 class="text-5xl md:text-6xl font-black text-blue-600 mb-4">Flood Risk Roadmap Generator</h1>
+            <p class="text-gray-700 text-lg mb-6">Select a region and rainfall scenario, then choose resilience improvements to see projected risk reduction, budget impact, and recommendation ranking.</p>
+            <div class="grid gap-6 md:grid-cols-3">
+                <div class="p-6 bg-blue-50 rounded-3xl border border-blue-200">
+                    <h2 class="text-xl font-bold text-blue-700 mb-3">Baseline Scenario</h2>
+                    <p class="text-gray-700 text-sm">Start with a regional flood risk profile and rainfall input to compute current vulnerability and identify the most effective interventions.</p>
+                </div>
+                <div class="p-6 bg-green-50 rounded-3xl border border-green-200">
+                    <h2 class="text-xl font-bold text-green-700 mb-3">Actionable Improvements</h2>
+                    <p class="text-gray-700 text-sm">Choose from infrastructure, preparedness, nature-based, and governance actions. Each item includes cost, timeline, and estimated risk benefit.</p>
+                </div>
+                <div class="p-6 bg-yellow-50 rounded-3xl border border-yellow-200">
+                    <h2 class="text-xl font-bold text-yellow-700 mb-3">Prioritized Roadmap</h2>
+                    <p class="text-gray-700 text-sm">The system ranks improvements by return on risk reduction and shows the roadmap that fits your budget.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid gap-8 xl:grid-cols-[1.3fr_0.7fr]">
+            <div class="bg-white rounded-3xl p-10 shadow-2xl">
+                <div class="grid gap-6 md:grid-cols-2 mb-8">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-3">Region</label>
+                        <select id="regionSelect" class="w-full p-4 border border-gray-300 rounded-3xl focus:outline-none focus:ring-4 focus:ring-blue-500 text-lg">
+                            {% for region in regions %}
+                            <option value="{{ region }}">{{ region }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-3">Estimated Rainfall (mm)</label>
+                        <div class="rounded-3xl border border-gray-300 p-4 bg-slate-50">
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="text-sm font-semibold text-gray-700">Rainfall</span>
+                                <span id="rainfallLabel" class="text-xl font-bold text-blue-600">50 mm</span>
+                            </div>
+                            <input id="rainfallSlider" type="range" min="0" max="300" step="5" value="50" class="w-full h-4 rounded-full accent-blue-600" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-8">
+                    <label class="block text-sm font-bold text-gray-700 mb-3">Budget</label>
+                    <div class="rounded-3xl border border-gray-300 p-4 bg-slate-50">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-sm font-semibold text-gray-700">Available Budget</span>
+                            <span id="budgetLabel" class="text-xl font-bold text-green-700">$1,000,000</span>
+                        </div>
+                        <input id="budgetSlider" type="range" min="100000" max="50000000" step="50000" value="1000000" class="w-full h-4 rounded-full accent-green-600" />
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Select Improvements</h2>
+                    <div id="improvementGrid" class="grid gap-4 sm:grid-cols-2">
+                        {% for improvement in improvements %}
+                        <label class="improvement-card block border border-slate-200 rounded-3xl p-5 cursor-pointer bg-white hover:border-blue-300">
+                            <div class="flex items-start gap-3">
+                                <input type="checkbox" class="improvement-checkbox mt-1" value="{{ improvement.id }}" />
+                                <div class="space-y-2">
+                                    <div class="flex items-center justify-between gap-4">
+                                        <h3 class="text-lg font-bold text-slate-900">{{ improvement.name }}</h3>
+                                        <span class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{{ improvement.category }}</span>
+                                    </div>
+                                    <p class="text-sm text-slate-600">{{ improvement.description }}</p>
+                                    <div class="flex flex-wrap gap-2 mt-3 text-xs text-slate-500">
+                                        <span class="px-3 py-2 bg-slate-100 rounded-full">Cost: ${{ '{:,}'.format(improvement.cost_usd) }}</span>
+                                        <span class="px-3 py-2 bg-slate-100 rounded-full">Timeline: {{ improvement.timeline_years }} yr</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="bg-slate-50 rounded-3xl border border-slate-200 p-6">
+                    <h2 class="text-2xl font-bold text-slate-800 mb-4">Roadmap Summary</h2>
+                    <div class="grid gap-4 md:grid-cols-3">
+                        <div class="rounded-3xl bg-white p-5 border border-slate-200">
+                            <p class="text-sm font-semibold text-slate-500">Current Risk</p>
+                            <div id="baselineRiskBadge" class="risk-badge risk-medium mt-3">Medium Risk</div>
+                            <p id="baselineConfidence" class="mt-3 text-slate-700 text-lg font-bold">Confidence: 65%</p>
+                        </div>
+                        <div class="rounded-3xl bg-white p-5 border border-slate-200">
+                            <p class="text-sm font-semibold text-slate-500">Projected Risk</p>
+                            <div id="improvedRiskBadge" class="risk-badge risk-medium mt-3">Medium Risk</div>
+                            <p id="improvedConfidence" class="mt-3 text-slate-700 text-lg font-bold">Confidence: 60%</p>
+                        </div>
+                        <div class="rounded-3xl bg-white p-5 border border-slate-200">
+                            <p class="text-sm font-semibold text-slate-500">Total Selected</p>
+                            <p id="selectedCount" class="mt-3 text-slate-900 text-3xl font-bold">0</p>
+                            <p id="selectedCost" class="text-slate-500 text-sm">Cost: $0</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <aside class="space-y-6">
+                <div class="bg-white rounded-3xl p-8 shadow-2xl border border-slate-200">
+                    <h2 class="text-2xl font-bold text-slate-800 mb-4">Recommended Roadmap</h2>
+                    <div id="recommendationList" class="space-y-4 text-sm text-slate-700">
+                        <p class="text-slate-500">Choose improvements to preview the most cost-effective actions.</p>
+                    </div>
+                </div>
+
+                <div class="bg-blue-50 rounded-3xl p-8 border border-blue-200 shadow-sm">
+                    <h2 class="text-2xl font-bold text-blue-700 mb-4">How It Works</h2>
+                    <ul class="space-y-3 text-slate-700 text-sm">
+                        <li>• Baseline risk is calculated using the same model behind the simulator.</li>
+                        <li>• Each improvement adjusts key risk features and re-evaluates predicted flood risk.</li>
+                        <li>• Recommendations are ranked by risk reduction per million dollars spent.</li>
+                        <li>• Budget filtering selects only the highest-impact improvements your budget can support.</li>
+                    </ul>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <script>
+        const regionSelect = document.getElementById('regionSelect');
+        const rainfallSlider = document.getElementById('rainfallSlider');
+        const rainfallLabel = document.getElementById('rainfallLabel');
+        const budgetSlider = document.getElementById('budgetSlider');
+        const budgetLabel = document.getElementById('budgetLabel');
+        const improvementCheckboxes = Array.from(document.querySelectorAll('.improvement-checkbox'));
+        const recommendationList = document.getElementById('recommendationList');
+        const baselineRiskBadge = document.getElementById('baselineRiskBadge');
+        const baselineConfidence = document.getElementById('baselineConfidence');
+        const improvedRiskBadge = document.getElementById('improvedRiskBadge');
+        const improvedConfidence = document.getElementById('improvedConfidence');
+        const selectedCount = document.getElementById('selectedCount');
+        const selectedCost = document.getElementById('selectedCost');
+
+        function formatCurrency(value) {
+            return '$' + Number(value).toLocaleString('en-US', { maximumFractionDigits: 0 });
+        }
+
+        function updateBadge(badge, riskClass) {
+            badge.classList.remove('risk-low', 'risk-medium', 'risk-high');
+            if (riskClass === 'high') {
+                badge.classList.add('risk-high');
+                badge.textContent = 'High Risk';
+            } else if (riskClass === 'medium') {
+                badge.classList.add('risk-medium');
+                badge.textContent = 'Medium Risk';
+            } else {
+                badge.classList.add('risk-low');
+                badge.textContent = 'Low Risk';
+            }
+        }
+
+        async function fetchRoadmap() {
+            const selectedImprovements = improvementCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
+            const payload = {
+                region: regionSelect.value,
+                rainfall_mm: Number(rainfallSlider.value),
+                selected_improvements: selectedImprovements,
+                budget: Number(budgetSlider.value)
+            };
+
+            try {
+                const response = await fetch('/generate_roadmap', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                if (!data.success) {
+                    recommendationList.innerHTML = `<p class="text-red-600">${data.error || 'Unable to generate roadmap.'}</p>`;
+                    return;
+                }
+                updateSummary(data);
+                renderRecommendations(data.recommended_improvements);
+            } catch (error) {
+                recommendationList.innerHTML = '<p class="text-red-600">Server error while generating roadmap.</p>';
+                console.error(error);
+            }
+        }
+
+        function updateSummary(data) {
+            updateBadge(baselineRiskBadge, data.baseline_risk.risk_class);
+            baselineConfidence.textContent = `Confidence: ${data.baseline_risk.confidence}%`;
+            updateBadge(improvedRiskBadge, data.improved_risk.risk_class);
+            improvedConfidence.textContent = `Confidence: ${data.improved_risk.confidence}%`;
+            selectedCount.textContent = data.selected_improvements.length;
+            selectedCost.textContent = `Cost: ${formatCurrency(data.selected_cost_usd)}`;
+        }
+
+        function renderRecommendations(recommendations) {
+            if (!recommendations.length) {
+                recommendationList.innerHTML = '<p class="text-slate-500">No recommended improvements fit the current budget. Try increasing the budget or selecting fewer items.</p>';
+                return;
+            }
+            recommendationList.innerHTML = recommendations.slice(0, 5).map(item => `
+                <div class="rounded-3xl bg-slate-50 border border-slate-200 p-4">
+                    <div class="flex items-center justify-between gap-4 mb-3">
+                        <h3 class="text-base font-bold text-slate-900">${item.name}</h3>
+                        <span class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">${item.category}</span>
+                    </div>
+                    <p class="text-slate-600 text-sm mb-3">${item.description}</p>
+                    <div class="flex flex-wrap gap-2 text-xs text-slate-500">
+                        <span class="px-3 py-2 bg-white rounded-full border border-slate-200">${formatCurrency(item.cost_usd)}</span>
+                        <span class="px-3 py-2 bg-white rounded-full border border-slate-200">${item.timeline_years} yr</span>
+                        <span class="px-3 py-2 bg-white rounded-full border border-slate-200">ROI ${item.roi}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateLabels() {
+            rainfallLabel.textContent = `${rainfallSlider.value} mm`;
+            budgetLabel.textContent = formatCurrency(budgetSlider.value);
+        }
+
+        rainfallSlider.addEventListener('input', () => { updateLabels(); fetchRoadmap(); });
+        budgetSlider.addEventListener('input', () => { updateLabels(); fetchRoadmap(); });
+        regionSelect.addEventListener('change', fetchRoadmap);
+        improvementCheckboxes.forEach(cb => cb.addEventListener('change', fetchRoadmap));
+
+        document.addEventListener('DOMContentLoaded', () => {
+            updateLabels();
+            fetchRoadmap();
+        });
+    </script>
+</body>
+</html>
