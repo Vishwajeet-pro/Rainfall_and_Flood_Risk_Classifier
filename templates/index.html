@@ -37,11 +37,69 @@
             <div class="mt-4 p-4 bg-red-100 border border-red-300 rounded-2xl text-red-800">{{ error }}</div>
             {% endif %}
 
-            <form method="POST" action="/predict" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- How to Use Guide -->
+            <div class="mb-8 p-6 bg-yellow-50 border-l-4 border-yellow-500 rounded-lg">
+                <h3 class="text-lg font-bold text-yellow-800 mb-3 flex items-center">
+                    <i class="bi bi-question-circle mr-2"></i>How to Use
+                </h3>
+                <ol class="text-gray-700 space-y-2 text-sm list-decimal list-inside">
+                    <li><strong>Option 1 - Auto-fill:</strong> Enter a city name below to fetch real rainfall data and auto-populate weather features.</li>
+                    <li><strong>Option 2 - Manual:</strong> Fill in all 20 features based on your region's conditions (or use example scenarios below).</li>
+                    <li>Click <strong>"Predict Risk"</strong> to get a flood risk classification with confidence score.</li>
+                    <li>Visit <strong>Analytics</strong> tab to understand which factors matter most.</li>
+                </ol>
+            </div>
+
+            <!-- Example Scenarios -->
+            <div class="mb-12 p-8 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-2xl">
+                <h2 class="text-2xl font-bold text-blue-700 mb-6 flex items-center">
+                    <i class="bi bi-lightbulb mr-2"></i>Try Example Scenarios
+                </h2>
+                <p class="text-gray-700 mb-6 text-sm">Click any button below to pre-fill the form with a realistic scenario, then adjust values as needed:</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <button type="button" onclick="loadScenario('healthy')" class="p-4 bg-green-500 hover:bg-green-600 text-white font-bold rounded-xl transition text-lg shadow-lg">
+                        <i class="bi bi-check-circle mr-2"></i>Healthy Region
+                    </button>
+                    <button type="button" onclick="loadScenario('moderate')" class="p-4 bg-yellow-500 hover:bg-yellow-600 text-white font-bold rounded-xl transition text-lg shadow-lg">
+                        <i class="bi bi-exclamation-triangle mr-2"></i>At-Risk Region
+                    </button>
+                    <button type="button" onclick="loadScenario('disaster')" class="p-4 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl transition text-lg shadow-lg">
+                        <i class="bi bi-exclamation-circle mr-2"></i>High Danger Zone
+                    </button>
+                </div>
+            </div>
+
+            <!-- Weather API Section -->
+            <div class="mb-12 p-8 bg-blue-50 border-2 border-blue-300 rounded-2xl">
+                <h2 class="text-2xl font-bold text-blue-700 mb-4 flex items-center">
+                    <i class="bi bi-cloud-sun mr-3"></i>Auto-Populate from Weather & Regional Data
+                </h2>
+                <p class="text-gray-700 text-sm mb-4">Enter a city name to fetch real-time weather data and auto-populate all 20 flood risk factors based on the region's actual characteristics (infrastructure, geography, development level, etc.).</p>
+                <div class="flex gap-4 flex-col md:flex-row">
+                    <input 
+                        type="text" 
+                        id="weatherCity" 
+                        placeholder="Enter city name (e.g., Mumbai, Lagos, Bangkok, New York)" 
+                        class="flex-1 p-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500 text-lg"
+                    />
+                    <button 
+                        type="button" 
+                        onclick="fetchWeather()" 
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-xl text-lg shadow-lg hover:shadow-xl transition-all duration-200"
+                    >
+                        <i class="bi bi-cloud-download mr-2"></i>Get Data
+                    </button>
+                </div>
+                <div id="weatherInfo" class="mt-4 p-4 bg-blue-100 rounded-xl hidden">
+                    <p id="weatherMessage" class="text-blue-800 text-sm"></p>
+                </div>
+            </div>
+
+            <form id="predictionForm" method="POST" action="/predict" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {% for name in feature_names %}
                 <div class="space-y-2">
-                    <label for="{{ name|replace(' ', '_') }}" class="block text-sm font-bold capitalize text-gray-700">{{ name }}</label>
-                    <input id="{{ name|replace(' ', '_') }}" name="{{ name }}" type="number" step="any" required value="{{ input_data[name] if input_data and (name in input_data) else '' }}" class="w-full p-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-lg" />
+                    <label for="{{ name|replace(' ', '_') }}" class="block text-sm font-bold capitalize text-gray-700 cursor-help" title="Enter value on a 0-14 scale based on regional data">{{ name }}<span class="ml-1 text-gray-400"><i class="bi bi-info-circle-fill text-xs"></i></span></label>
+                    <input id="{{ name|replace(' ', '_') }}" name="{{ name }}" type="number" step="any" required value="{{ input_data[name] if input_data and (name in input_data) else '' }}" class="w-full p-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-lg" placeholder="0-14 scale" />
                 </div>
                 {% endfor %}
 
@@ -51,12 +109,190 @@
             </form>
 
             {% if prediction %}
-            <div class="mt-8 p-6 rounded-2xl font-bold text-2xl shadow-lg {{ 'text-red-700 bg-red-100 border-2 border-red-400' if 'High' in prediction else 'text-green-700 bg-green-100 border-2 border-green-400' }}">{{ prediction }}</div>
+            <div class="mt-12 p-8 rounded-2xl shadow-lg {{ 'bg-red-50 border-2 border-red-400' if 'High' in prediction else 'bg-green-50 border-2 border-green-400' }}">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-3xl font-bold {{ 'text-red-700' if 'High' in prediction else 'text-green-700' }}">{{ prediction }}</h2>
+                    <span class="text-2xl font-bold {{ 'text-red-700' if 'High' in prediction else 'text-green-700' }}">{{ confidence }}% Confidence</span>
+                </div>
+                <div class="w-full bg-gray-300 rounded-full h-4 overflow-hidden">
+                    <div class="h-full {{ 'bg-red-600' if 'High' in prediction else 'bg-green-600' }}" style="width: {{ confidence }}%;"></div>
+                </div>
+                <p class="text-gray-600 text-sm mt-4">
+                    <i class="bi bi-info-circle mr-2"></i>
+                    The confidence score shows how certain the model is about this prediction based on the input factors.
+                </p>
+            </div>
             {% endif %}
         </div>
     </div>
 
-
 </body>
+<script>
+async function fetchWeather() {
+    const city = document.getElementById('weatherCity').value.trim();
+    if (!city) {
+        alert('Please enter a city name');
+        return;
+    }
+
+    const weatherInfo = document.getElementById('weatherInfo');
+    const weatherMessage = document.getElementById('weatherMessage');
+    
+    try {
+        const response = await fetch('/get_weather', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ city: city })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            // Populate weather fields
+            document.getElementById('monsoonIntensity').value = data.monsoonIntensity;
+            document.getElementById('ClimateChange').value = data.ClimateChange;
+            
+            // Populate all other fields from regional profile
+            if (data.all_features) {
+                for (const [featureName, value] of Object.entries(data.all_features)) {
+                    const fieldId = featureName.replace(' ', '_');
+                    const field = document.getElementById(fieldId);
+                    if (field) {
+                        field.value = value;
+                    }
+                }
+            }
+            
+            // Show success message
+            weatherMessage.innerHTML = `
+                <strong>✓ Weather & Regional Data Loaded for ${data.city}</strong><br>
+                <small>Temperature: ${data.temperature}°C | Humidity: ${data.humidity}% | Clouds: ${data.clouds_percent}% | Rainfall: ${data.rainfall_mm}mm</small><br>
+                <small>Condition: ${data.description} | Regional Profile: Real data-based estimates | Updated: ${data.timestamp}</small>
+            `;
+            weatherInfo.classList.remove('hidden');
+            weatherInfo.classList.add('bg-green-100');
+            weatherInfo.classList.remove('bg-blue-100');
+        } else {
+            weatherMessage.textContent = '❌ ' + (data.error || 'Failed to fetch weather data');
+            weatherInfo.classList.remove('hidden');
+            weatherInfo.classList.add('bg-red-100');
+            weatherInfo.classList.remove('bg-blue-100', 'bg-green-100');
+        }
+    } catch (error) {
+        weatherMessage.textContent = '❌ Network error: ' + error.message;
+        weatherInfo.classList.remove('hidden');
+        weatherInfo.classList.add('bg-red-100');
+        weatherInfo.classList.remove('bg-blue-100', 'bg-green-100');
+    }
+}
+
+// Allow Enter key to trigger weather fetch
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('weatherCity').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') fetchWeather();
+    });
+});
+
+// Scenario data
+const scenarios = {
+    healthy: {
+        monsoonIntensity: 2,
+        TopographyDrainage: 2,
+        RiverManagement: 1,
+        Deforestation: 1,
+        Urbanization: 1,
+        ClimateChange: 1,
+        DamsQuality: 1,
+        Siltation: 1,
+        AgriculturalPractices: 2,
+        Encroachments: 1,
+        ineffectiveDisasterPreparedness: 1,
+        DrainageSystems: 1,
+        'Coastal vulnerability': 0,
+        Landslides: 1,
+        watershades: 2,
+        'deteriorating infrastructure': 1,
+        'population score': 2,
+        WetlandLoss: 1,
+        InadequatePlanning: 1,
+        PoliticalFactors: 1
+    },
+    moderate: {
+        monsoonIntensity: 7,
+        TopographyDrainage: 6,
+        RiverManagement: 5,
+        Deforestation: 6,
+        Urbanization: 8,
+        ClimateChange: 5,
+        DamsQuality: 6,
+        Siltation: 7,
+        AgriculturalPractices: 6,
+        Encroachments: 5,
+        ineffectiveDisasterPreparedness: 6,
+        DrainageSystems: 5,
+        'Coastal vulnerability': 4,
+        Landslides: 5,
+        watershades: 5,
+        'deteriorating infrastructure': 6,
+        'population score': 7,
+        WetlandLoss: 6,
+        InadequatePlanning: 6,
+        PoliticalFactors: 5
+    },
+    disaster: {
+        monsoonIntensity: 13,
+        TopographyDrainage: 12,
+        RiverManagement: 11,
+        Deforestation: 13,
+        Urbanization: 12,
+        ClimateChange: 12,
+        DamsQuality: 10,
+        Siltation: 13,
+        AgriculturalPractices: 11,
+        Encroachments: 12,
+        ineffectiveDisasterPreparedness: 13,
+        DrainageSystems: 10,
+        'Coastal vulnerability': 12,
+        Landslides: 12,
+        watershades: 11,
+        'deteriorating infrastructure': 13,
+        'population score': 11,
+        WetlandLoss: 12,
+        InadequatePlanning: 12,
+        PoliticalFactors: 11
+    }
+};
+
+function loadScenario(scenarioName) {
+    const scenario = scenarios[scenarioName];
+    if (!scenario) return;
+    
+    // Populate all form fields
+    for (const [featureName, value] of Object.entries(scenario)) {
+        const fieldId = featureName.replace(' ', '_');
+        const field = document.getElementById(fieldId);
+        if (field) {
+            field.value = value;
+        }
+    }
+    
+    // Show a message
+    const weatherInfo = document.getElementById('weatherInfo');
+    const weatherMessage = document.getElementById('weatherMessage');
+    const scenarioNames = {
+        healthy: 'Healthy Region (Low Risk)',
+        moderate: 'At-Risk Region (Moderate Flood Risk)',
+        disaster: 'High Danger Zone (Very High Risk)'
+    };
+    
+    weatherMessage.innerHTML = `✓ <strong>${scenarioNames[scenarioName]}</strong> scenario loaded. Adjust values as needed and click "Predict Risk".`;
+    weatherInfo.classList.remove('hidden', 'bg-blue-100', 'bg-red-100');
+    weatherInfo.classList.add('bg-green-100');
+    
+    // Scroll to form
+    document.getElementById('predictionForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+</script>
+
 </html>
 

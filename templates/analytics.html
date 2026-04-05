@@ -6,8 +6,10 @@
     <title>Flood Risk Classifier - Analytics</title>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .chart-container { position: relative; height: 500px; margin-bottom: 40px; }
     </style>
 </head>
 <body>
@@ -29,35 +31,145 @@
         </div>
     </nav>
 
-<div class="max-w-6xl mx-auto my-12 px-4 md:px-10">
-        <!-- Dashboard Image Section -->
-        <div class="text-center mb-12">
-            <h1 class="text-5xl md:text-6xl font-black text-blue-600 mb-6">Power BI Dashboard</h1>
-            <p class="text-2xl text-gray-600 mb-8">Visualizing flood risk predictions and patterns</p>
-            <img src="../static/images/image.png" class="w-full max-h-[70vh] object-cover rounded-3xl shadow-2xl" alt="Power BI Dashboard Visual">
+<div class="max-w-7xl mx-auto my-12 px-4 md:px-10">
+        <!-- Title Section -->
+        <div class="mb-12">
+            <h1 class="text-5xl md:text-6xl font-black text-blue-600 mb-4">Analytics Dashboard</h1>
+            <p class="text-xl text-gray-600">Explore the key factors driving flood risk predictions using our Random Forest model</p>
         </div>
 
-        <!-- Technical Insights Section -->
-        <div class="max-w-4xl mx-auto">
-            <div class="bg-gradient-to-r from-purple-500 via-purple-600 to-indigo-600 text-white p-12 rounded-3xl shadow-2xl text-center">
-                <h2 class="text-4xl font-bold mb-8 flex items-center justify-center mx-auto">
-                    <i class="bi bi-lightbulb-fill mr-3 text-3xl"></i>Technical Insights
-                </h2>
-                <p class="text-xl mb-10 leading-relaxed opacity-95 max-w-3xl mx-auto">
-                    This analysis utilizes the Gini Importance from our Random Forest model to identify which environmental and infrastructural factors have the highest correlation with flood probability.
+        <!-- Feature Importance Chart -->
+        <div class="bg-white rounded-3xl p-8 shadow-2xl mb-12">
+            <h2 class="text-3xl font-bold text-blue-600 mb-2 flex items-center">
+                <i class="bi bi-bar-chart mr-3"></i>Feature Importance Ranking
+            </h2>
+            <p class="text-gray-600 mb-6">The importance score shows how much each factor contributes to predicting flood risk. Higher values = stronger influence on predictions.</p>
+            <div class="chart-container">
+                <canvas id="importanceChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Feature Categories Breakdown -->
+        <div class="bg-white rounded-3xl p-8 shadow-2xl mb-12">
+            <h2 class="text-3xl font-bold text-blue-600 mb-2 flex items-center">
+                <i class="bi bi-pie-chart mr-3"></i>Risk Factors by Category
+            </h2>
+            <p class="text-gray-600 mb-6">Flood risk is influenced by multiple categories of factors. Understanding each helps explain why a region is at high or low risk.</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="p-6 bg-blue-50 border-l-4 border-blue-500 rounded-lg">
+                    <h3 class="text-xl font-bold text-blue-700 mb-3 flex items-center">
+                        <i class="bi bi-cloud-rain mr-2"></i>Climate & Weather
+                    </h3>
+                    <ul class="text-gray-700 space-y-2 text-sm">
+                        <li><strong>monsoonIntensity:</strong> Strength of monsoon rainfall</li>
+                        <li><strong>ClimateChange:</strong> Long-term climate patterns</li>
+                    </ul>
+                </div>
+                <div class="p-6 bg-green-50 border-l-4 border-green-500 rounded-lg">
+                    <h3 class="text-xl font-bold text-green-700 mb-3 flex items-center">
+                        <i class="bi bi-tree-fill mr-2"></i>Land Use & Vegetation
+                    </h3>
+                    <ul class="text-gray-700 space-y-2 text-sm">
+                        <li><strong>Deforestation:</strong> Loss of forest cover</li>
+                        <li><strong>Urbanization:</strong> Development of urban areas</li>
+                        <li><strong>WetlandLoss:</strong> Loss of natural water retention areas</li>
+                        <li><strong>AgriculturalPractices:</strong> Farming methods affecting drainage</li>
+                    </ul>
+                </div>
+                <div class="p-6 bg-orange-50 border-l-4 border-orange-500 rounded-lg">
+                    <h3 class="text-xl font-bold text-orange-700 mb-3 flex items-center">
+                        <i class="bi bi-tools mr-2"></i>Infrastructure
+                    </h3>
+                    <ul class="text-gray-700 space-y-2 text-sm">
+                        <li><strong>DamsQuality:</strong> Condition of water control structures</li>
+                        <li><strong>deteriorating infrastructure:</strong> Aging drainage systems</li>
+                        <li><strong>Siltation:</strong> Sediment buildup in waterways</li>
+                        <li><strong>DrainageSystems:</strong> Effectiveness of drainage</li>
+                    </ul>
+                </div>
+                <div class="p-6 bg-red-50 border-l-4 border-red-500 rounded-lg">
+                    <h3 class="text-xl font-bold text-red-700 mb-3 flex items-center">
+                        <i class="bi bi-exclamation-triangle-fill mr-2"></i>Human & Natural Hazards
+                    </h3>
+                    <ul class="text-gray-700 space-y-2 text-sm">
+                        <li><strong>Encroachments:</strong> Building in flood-prone areas</li>
+                        <li><strong>InadequatePlanning:</strong> Poor urban planning</li>
+                        <li><strong>ineffectiveDisasterPreparedness:</strong> Lack of disaster readiness</li>
+                        <li><strong>Landslides:</strong> Slope failures triggering floods</li>
+                        <li><strong>Coastal vulnerability:</strong> Risk in coastal areas</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Key Insights -->
+        <div class="bg-gradient-to-r from-purple-500 via-purple-600 to-indigo-600 text-white p-12 rounded-3xl shadow-2xl">
+            <h2 class="text-3xl font-bold mb-6 flex items-center">
+                <i class="bi bi-lightbulb-fill mr-3"></i>Key Insights
+            </h2>
+            <div class="space-y-4 text-lg leading-relaxed opacity-95">
+                <p>
+                    <strong>🔝 Top Driver:</strong> Deteriorating infrastructure (5.88%) — aging drainage systems and water control structures are the strongest predictors of flood risk.
                 </p>
-                <h4 class="text-2xl font-bold mb-8">Top 5 Flood Drivers</h4>
-                <ol class="space-y-4 max-w-2xl mx-auto">
-                    <li class="p-6 bg-white/20 backdrop-blur-sm rounded-2xl font-semibold text-xl">1. deteriorating infrastructure (Importance: 0.059)</li>
-                    <li class="p-6 bg-white/20 backdrop-blur-sm rounded-2xl font-semibold text-xl">2. ineffectiveDisasterPreparedness (Importance: 0.057)</li>
-                    <li class="p-6 bg-white/20 backdrop-blur-sm rounded-2xl font-semibold text-xl">3. Siltation (Importance: 0.057)</li>
-                    <li class="p-6 bg-white/20 backdrop-blur-sm rounded-2xl font-semibold text-xl">4. Urbanization (Importance: 0.055)</li>
-                    <li class="p-6 bg-white/20 backdrop-blur-sm rounded-2xl font-semibold text-xl">5. TopographyDrainage (Importance: 0.055)</li>
-                </ol>
+                <p>
+                    <strong>⚠️ Disaster Readiness Matters:</strong> Ineffective disaster preparedness (5.71%) shows that regions without strong warning and response systems face higher flood risk.
+                </p>
+                <p>
+                    <strong>🏗️ Urban Growth Impact:</strong> Urbanization (5.53%) and Siltation (5.69%) are in the top 5, indicating that rapid city development without proper water management significantly increases risk.
+                </p>
+                <p>
+                    <strong>📊 Balanced Assessment:</strong> All 20 factors contribute meaningfully (3.7%-5.9% importance), showing that flood risk is a complex phenomenon requiring multi-faceted solutions.
+                </p>
             </div>
         </div>
     </div>
 
+<script>
+// Feature importance data
+const importanceData = {
+    labels: ['Deteriorating\nInfrastructure', 'Ineffective Disaster\nPreparedness', 'Siltation', 'Urbanization', 'Topography\nDrainage', 
+             'Population Score', 'River\nManagement', 'Landslides', 'Inadequate\nPlanning', 'Dams Quality',
+             'Deforestation', 'Watershades', 'Wetland Loss', 'Political Factors', 'Agricultural\nPractices',
+             'Encroachments', 'Drainage Systems', 'Monsoon\nIntensity', 'Climate Change', 'Coastal\nVulnerability'],
+    datasets: [{
+        label: 'Feature Importance',
+        data: [0.0588, 0.0571, 0.0569, 0.0553, 0.0550, 0.0543, 0.0539, 0.0531, 0.0510, 0.0493,
+                0.0493, 0.0490, 0.0475, 0.0474, 0.0467, 0.0453, 0.0450, 0.0442, 0.0436, 0.0374],
+        backgroundColor: 'rgba(59, 130, 246, 0.8)',
+        borderColor: 'rgba(30, 58, 138, 1)',
+        borderWidth: 2,
+        borderRadius: 6
+    }]
+};
+
+const ctx = document.getElementById('importanceChart').getContext('2d');
+new Chart(ctx, {
+    type: 'bar',
+    data: importanceData,
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 0.070,
+                ticks: {
+                    callback: function(value) {
+                        return (value * 100).toFixed(1) + '%';
+                    }
+                },
+                title: {
+                    display: true,
+                    text: 'Importance Score'
+                }
+            }
+        }
+    }
+});
+</script>
 
 </body>
 </html>
