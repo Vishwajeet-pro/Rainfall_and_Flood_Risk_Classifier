@@ -20,9 +20,124 @@ with open('flood_model.pkl', 'rb') as f:
     model = pickle.load(f)
 
 
+# Regional baseline profiles for scenario simulation
+REGIONAL_PROFILES = {
+    'Bangladesh': {'TopographyDrainage': 12, 'RiverManagement': 10, 'Deforestation': 9, 'Urbanization': 10,
+                  'DamsQuality': 7, 'Siltation': 11, 'Encroachments': 10, 'ineffectiveDisasterPreparedness': 9,
+                  'DrainageSystems': 8, 'Coastal vulnerability': 11, 'Landslides': 6, 'watershades': 10,
+                  'deteriorating infrastructure': 10, 'population score': 11, 'WetlandLoss': 9, 'AgriculturalPractices': 8,
+                  'InadequatePlanning': 9, 'PoliticalFactors': 8},
+    'India': {'TopographyDrainage': 10, 'RiverManagement': 8, 'Deforestation': 8, 'Urbanization': 9,
+             'DamsQuality': 6, 'Siltation': 9, 'Encroachments': 8, 'ineffectiveDisasterPreparedness': 8,
+             'DrainageSystems': 7, 'Coastal vulnerability': 9, 'Landslides': 8, 'watershades': 9,
+             'deteriorating infrastructure': 8, 'population score': 10, 'WetlandLoss': 8, 'AgriculturalPractices': 7,
+             'InadequatePlanning': 8, 'PoliticalFactors': 6},
+    'Thailand': {'TopographyDrainage': 10, 'RiverManagement': 7, 'Deforestation': 8, 'Urbanization': 8,
+                'DamsQuality': 6, 'Siltation': 10, 'Encroachments': 7, 'ineffectiveDisasterPreparedness': 7,
+                'DrainageSystems': 6, 'Coastal vulnerability': 8, 'Landslides': 7, 'watershades': 9,
+                'deteriorating infrastructure': 7, 'population score': 8, 'WetlandLoss': 7, 'AgriculturalPractices': 8,
+                'InadequatePlanning': 7, 'PoliticalFactors': 6},
+    'Indonesia': {'TopographyDrainage': 11, 'RiverManagement': 6, 'Deforestation': 10, 'Urbanization': 8,
+                 'DamsQuality': 5, 'Siltation': 10, 'Encroachments': 8, 'ineffectiveDisasterPreparedness': 8,
+                 'DrainageSystems': 6, 'Coastal vulnerability': 10, 'Landslides': 10, 'watershades': 10,
+                 'deteriorating infrastructure': 7, 'population score': 9, 'WetlandLoss': 9, 'AgriculturalPractices': 8,
+                 'InadequatePlanning': 7, 'PoliticalFactors': 7},
+    'Nigeria': {'TopographyDrainage': 9, 'RiverManagement': 7, 'Deforestation': 8, 'Urbanization': 9,
+               'DamsQuality': 6, 'Siltation': 8, 'Encroachments': 9, 'ineffectiveDisasterPreparedness': 9,
+               'DrainageSystems': 6, 'Coastal vulnerability': 8, 'Landslides': 5, 'watershades': 8,
+               'deteriorating infrastructure': 8, 'population score': 10, 'WetlandLoss': 7, 'AgriculturalPractices': 7,
+               'InadequatePlanning': 9, 'PoliticalFactors': 8},
+    'United States': {'TopographyDrainage': 6, 'RiverManagement': 5, 'Deforestation': 3, 'Urbanization': 8,
+                     'DamsQuality': 3, 'Siltation': 4, 'Encroachments': 5, 'ineffectiveDisasterPreparedness': 3,
+                     'DrainageSystems': 4, 'Coastal vulnerability': 6, 'Landslides': 5, 'watershades': 5,
+                     'deteriorating infrastructure': 4, 'population score': 7, 'WetlandLoss': 3, 'AgriculturalPractices': 4,
+                     'InadequatePlanning': 3, 'PoliticalFactors': 2},
+    'United Kingdom': {'TopographyDrainage': 5, 'RiverManagement': 4, 'Deforestation': 2, 'Urbanization': 7,
+                      'DamsQuality': 2, 'Siltation': 3, 'Encroachments': 3, 'ineffectiveDisasterPreparedness': 2,
+                      'DrainageSystems': 3, 'Coastal vulnerability': 5, 'Landslides': 3, 'watershades': 4,
+                      'deteriorating infrastructure': 3, 'population score': 6, 'WetlandLoss': 2, 'AgriculturalPractices': 3,
+                      'InadequatePlanning': 2, 'PoliticalFactors': 1},
+    'Japan': {'TopographyDrainage': 8, 'RiverManagement': 4, 'Deforestation': 2, 'Urbanization': 8,
+             'DamsQuality': 2, 'Siltation': 4, 'Encroachments': 3, 'ineffectiveDisasterPreparedness': 2,
+             'DrainageSystems': 2, 'Coastal vulnerability': 8, 'Landslides': 7, 'watershades': 6,
+             'deteriorating infrastructure': 2, 'population score': 6, 'WetlandLoss': 2, 'AgriculturalPractices': 3,
+             'InadequatePlanning': 2, 'PoliticalFactors': 1},
+    'Australia': {'TopographyDrainage': 7, 'RiverManagement': 5, 'Deforestation': 4, 'Urbanization': 7,
+                 'DamsQuality': 3, 'Siltation': 5, 'Encroachments': 4, 'ineffectiveDisasterPreparedness': 3,
+                 'DrainageSystems': 4, 'Coastal vulnerability': 7, 'Landslides': 4, 'watershades': 6,
+                 'deteriorating infrastructure': 3, 'population score': 6, 'WetlandLoss': 4, 'AgriculturalPractices': 5,
+                 'InadequatePlanning': 3, 'PoliticalFactors': 2},
+}
+
+
+def rainfall_to_features(rainfall_mm, region='Bangladesh'):
+    """
+    Convert rainfall amount (mm) to flood risk feature values.
+    
+    Args:
+        rainfall_mm: Rainfall amount in millimeters (0-300)
+        region: Region name for baseline adjustments
+    
+    Returns:
+        Dictionary of feature values (0-14 scale)
+    """
+    # Get baseline profile for region
+    base = REGIONAL_PROFILES.get(region, REGIONAL_PROFILES['India'])
+    
+    # Derived features based on rainfall
+    # Monsoon intensity: maps 0-300mm to 0-14 scale
+    monsoon_intensity = min(max(0, (rainfall_mm / 50) * 14), 14)
+    
+    # Climate change proxy: increase with extreme rainfall
+    climate_change = min(max(0, ((rainfall_mm - 100) / 100) * 8 + 5), 14) if rainfall_mm > 100 else max(0, (rainfall_mm / 100) * 5)
+    
+    # River management stress increases with rainfall
+    river_mgmt_adjustment = min((rainfall_mm / 150) * 4, 4)  # Up to +4
+    
+    # Siltation increases with rainfall (erosion)
+    siltation_adjustment = min((rainfall_mm / 200) * 3, 3)  # Up to +3
+    
+    # Coastal vulnerability increases significantly for extreme rainfall
+    coastal_adjustment = min((rainfall_mm / 250) * 4, 4) if rainfall_mm > 100 else 0
+    
+    # Drainage system stress
+    drainage_adjustment = min((rainfall_mm / 180) * 3, 3)
+    
+    # Build feature dictionary
+    features = {
+        'monsoonIntensity': round(monsoon_intensity, 1),
+        'ClimateChange': round(climate_change, 1),
+        'TopographyDrainage': round(base['TopographyDrainage'] + 0, 1),
+        'RiverManagement': round(min(base['RiverManagement'] + river_mgmt_adjustment, 14), 1),
+        'Deforestation': round(base['Deforestation'], 1),
+        'Urbanization': round(base['Urbanization'], 1),
+        'DamsQuality': round(base['DamsQuality'], 1),
+        'Siltation': round(min(base['Siltation'] + siltation_adjustment, 14), 1),
+        'AgriculturalPractices': round(base['AgriculturalPractices'], 1),
+        'Encroachments': round(base['Encroachments'], 1),
+        'ineffectiveDisasterPreparedness': round(base['ineffectiveDisasterPreparedness'], 1),
+        'DrainageSystems': round(min(base['DrainageSystems'] + drainage_adjustment, 14), 1),
+        'Coastal vulnerability': round(min(base['Coastal vulnerability'] + coastal_adjustment, 14), 1),
+        'Landslides': round(base['Landslides'], 1),
+        'watershades': round(base['watershades'], 1),
+        'deteriorating infrastructure': round(base['deteriorating infrastructure'], 1),
+        'population score': round(base['population score'], 1),
+        'WetlandLoss': round(base['WetlandLoss'], 1),
+        'InadequatePlanning': round(base['InadequatePlanning'], 1),
+        'PoliticalFactors': round(base['PoliticalFactors'], 1),
+    }
+    
+    return features
+
+
 @app.route('/')
 def index():
     return render_template('index.html', feature_names=FEATURE_NAMES)
+
+
+@app.route('/simulator')
+def simulator():
+    return render_template('simulator.html')
 
 
 @app.route('/analytics')
@@ -212,6 +327,72 @@ def predict():
         confidence=confidence,
         input_data=request.form,
     )
+
+
+@app.route('/predict_scenario', methods=['POST'])
+def predict_scenario():
+    """
+    Predict flood risk based on rainfall amount and region.
+    Expects JSON: {"rainfall_mm": 100, "region": "Bangladesh"}
+    Returns: {"risk_class": "high", "risk_score": 0.75, "confidence": 85, "message": "..."}
+    """
+    try:
+        data = request.get_json()
+        rainfall_mm = float(data.get('rainfall_mm', 0))
+        region = data.get('region', 'Bangladesh')
+        
+        # Validate rainfall range
+        if rainfall_mm < 0 or rainfall_mm > 300:
+            return jsonify({'error': 'Rainfall must be between 0 and 300 mm'}), 400
+        
+        # Generate features from rainfall
+        features_dict = rainfall_to_features(rainfall_mm, region)
+        
+        # Extract values in FEATURE_NAMES order for model prediction
+        feature_values = [features_dict[name] for name in FEATURE_NAMES]
+        X = np.array(feature_values).reshape(1, -1)
+        
+        # Get prediction and probabilities
+        prediction = model.predict(X)[0]
+        probabilities = model.predict_proba(X)[0]
+        
+        # Get confidence score
+        class_index = list(model.classes_).index(prediction)
+        confidence = round(probabilities[class_index] * 100, 1)
+        
+        # Get max probability as risk score
+        risk_score = round(np.max(probabilities), 3)
+        
+        # Determine risk message
+        risk_messages = {
+            'high': '⚠️ High flood risk detected. Immediate action recommended.',
+            'medium': '⚡ Moderate flood risk. Preventive measures advised.',
+            'low': '✓ Low flood risk. Normal conditions.'
+        }
+        
+        message = risk_messages.get(str(prediction).strip().lower(), 'Risk level unclear.')
+        
+        return jsonify({
+            'success': True,
+            'rainfall_mm': rainfall_mm,
+            'region': region,
+            'risk_class': str(prediction).strip().lower(),
+            'risk_score': risk_score,
+            'confidence': confidence,
+            'message': message,
+            'affected_features': {
+                'monsoonIntensity': features_dict['monsoonIntensity'],
+                'RiverManagement': features_dict['RiverManagement'],
+                'Siltation': features_dict['Siltation'],
+                'DrainageSystems': features_dict['DrainageSystems'],
+                'Coastal vulnerability': features_dict['Coastal vulnerability'],
+            }
+        })
+    
+    except ValueError as e:
+        return jsonify({'error': f'Invalid input: {str(e)}'}), 400
+    except Exception as e:
+        return jsonify({'error': f'Prediction error: {str(e)}'}), 500
 
 
 if __name__ == '__main__':

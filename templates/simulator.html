@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rainfall Scenario Simulator - Flood Risk Classifier</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .risk-badge { padding: 12px 24px; border-radius: 12px; font-weight: bold; font-size: 18px; }
+        .risk-low { background-color: #d4edda; color: #155724; }
+        .risk-medium { background-color: #fff3cd; color: #856404; }
+        .risk-high { background-color: #f8d7da; color: #721c24; }
+        .slider-track { background: linear-gradient(to right, #10b981, #f59e0b, #ef4444); }
+        .feature-impact { transition: all 0.3s ease; }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="bg-blue-600 shadow-lg">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <a href="/" class="text-white text-2xl font-bold flex items-center">
+                    <i class="bi bi-water mr-2"></i>Flood Risk Classifier
+                </a>
+                <div class="hidden md:flex space-x-6">
+                    <a href="/" class="text-white hover:text-blue-200 px-3 py-2 rounded transition">Predictor</a>
+                    <a href="/simulator" class="text-white hover:text-blue-200 px-3 py-2 rounded transition active:bg-blue-700 bg-blue-700">Simulator</a>
+                    <a href="/analytics" class="text-white hover:text-blue-200 px-3 py-2 rounded transition">Analytics</a>
+                </div>
+                <button class="md:hidden text-white">
+                    <i class="bi bi-list text-2xl"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-6xl mx-auto my-12 px-4 md:px-10">
+        <div class="bg-white rounded-3xl p-10 shadow-2xl">
+            <h1 class="text-5xl md:text-6xl font-black text-blue-600 mb-4">Rainfall Scenario Simulator</h1>
+            <p class="text-gray-700 text-lg mb-8">
+                <i class="bi bi-info-circle mr-2 text-blue-500"></i>
+                Explore how different rainfall amounts affect flood risk across regions. Drag the slider to simulate rainfall intensity and watch predictions update in real-time.
+            </p>
+
+            <!-- Main Simulator Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <!-- Left: Controls -->
+                <div class="bg-gradient-to-br from-blue-50 to-indigo-50 p-8 rounded-2xl border-2 border-blue-300">
+                    <h2 class="text-2xl font-bold text-blue-700 mb-6 flex items-center">
+                        <i class="bi bi-cloud-rain mr-3"></i>Rainfall Controls
+                    </h2>
+
+                    <!-- Region Selector -->
+                    <div class="mb-8">
+                        <label class="block text-lg font-bold text-gray-700 mb-3">Region</label>
+                        <select id="regionSelect" class="w-full p-4 border-2 border-blue-300 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500 text-lg bg-white">
+                            <option value="Bangladesh">🇧🇩 Bangladesh</option>
+                            <option value="India">🇮🇳 India</option>
+                            <option value="Thailand">🇹🇭 Thailand</option>
+                            <option value="Indonesia">🇮🇩 Indonesia</option>
+                            <option value="Nigeria">🇳🇬 Nigeria</option>
+                            <option value="United States">🇺🇸 United States</option>
+                            <option value="United Kingdom">🇬🇧 United Kingdom</option>
+                            <option value="Japan">🇯🇵 Japan</option>
+                            <option value="Australia">🇦🇺 Australia</option>
+                        </select>
+                    </div>
+
+                    <!-- Rainfall Slider -->
+                    <div class="mb-8">
+                        <div class="flex justify-between items-center mb-3">
+                            <label class="text-lg font-bold text-gray-700">Rainfall Amount</label>
+                            <span id="rainfallValue" class="text-2xl font-bold text-blue-600">50</span>
+                            <span class="text-lg font-bold text-gray-600">mm</span>
+                        </div>
+                        <input 
+                            type="range" 
+                            id="rainfallSlider" 
+                            min="0" 
+                            max="300" 
+                            value="50" 
+                            step="5"
+                            class="w-full h-4 rounded-lg appearance-none cursor-pointer slider-track"
+                            style="background: linear-gradient(to right, #10b981 0%, #10b981 calc(50/300*100%), #f59e0b calc(50/300*100%), #f59e0b calc(100/300*100%), #ef4444 calc(100/300*100%))"
+                        />
+                        <div class="flex justify-between text-xs text-gray-500 mt-2 font-semibold">
+                            <span>Light (0-50mm)</span>
+                            <span>Moderate (50-150mm)</span>
+                            <span>Heavy (150-300mm)</span>
+                        </div>
+                    </div>
+
+                    <!-- Rainfall Guide -->
+                    <div class="p-4 bg-blue-100 rounded-xl border-l-4 border-blue-500">
+                        <p class="text-sm text-blue-800"><strong>Quick Guide:</strong></p>
+                        <ul class="text-sm text-blue-800 mt-2 space-y-1">
+                            <li>• <strong>0-50mm:</strong> Light rain, normal conditions</li>
+                            <li>• <strong>50-150mm:</strong> Moderate to heavy rainfall</li>
+                            <li>• <strong>150-300mm:</strong> Extreme rainfall, high risk</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Right: Risk Prediction Card -->
+                <div class="bg-white border-2 border-gray-200 p-8 rounded-2xl">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                        <i class="bi bi-bullseye mr-3 text-blue-600"></i>Risk Assessment
+                    </h2>
+
+                    <div id="ResultsContainer" class="space-y-6">
+                        <div>
+                            <p class="text-gray-600 font-semibold mb-3">Flood Risk Level</p>
+                            <div id="RiskBadge" class="risk-badge risk-low text-center">
+                                <i class="bi bi-check-circle mr-2"></i>LOW RISK
+                            </div>
+                        </div>
+
+                        <div>
+                            <p class="text-gray-600 font-semibold mb-2">Confidence Score</p>
+                            <div class="flex items-center gap-3">
+                                <div id="ConfidenceBar" class="flex-1 bg-gray-200 rounded-full h-6 overflow-hidden">
+                                    <div class="bg-green-500 h-full transition-all duration-500" style="width: 50%"></div>
+                                </div>
+                                <span id="ConfidenceText" class="font-bold text-lg text-gray-700">50%</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <p class="text-gray-600 font-semibold mb-3">Risk Message</p>
+                            <div id="RiskMessage" class="p-4 bg-green-100 rounded-lg border-l-4 border-green-500">
+                                <p class="text-green-800">✓ Low flood risk. Normal conditions.</p>
+                            </div>
+                        </div>
+
+                        <div id="LoadingSpinner" class="hidden text-center py-6">
+                            <div class="inline-block">
+                                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                            </div>
+                            <p class="text-gray-600 mt-3">Analyzing scenario...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Affected Features Section -->
+            <div class="bg-gradient-to-r from-purple-50 to-pink-50 p-8 rounded-2xl border-2 border-purple-300 mb-8">
+                <h2 class="text-2xl font-bold text-purple-700 mb-6 flex items-center">
+                    <i class="bi bi-graph-up mr-3"></i>Top Rainfall-Affected Features
+                </h2>
+                <p class="text-gray-700 text-sm mb-6">These factors increase most significantly with rainfall:</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                    <div class="feature-impact bg-white p-5 rounded-xl shadow-md border-t-4 border-blue-500">
+                        <p class="text-sm text-gray-600 font-semibold mb-2">Monsoon Intensity</p>
+                        <p id="feat-monsoon" class="text-3xl font-bold text-blue-600">0.0</p>
+                        <p class="text-xs text-gray-500 mt-2">increases rapidly with rainfall</p>
+                    </div>
+
+                    <div class="feature-impact bg-white p-5 rounded-xl shadow-md border-t-4 border-orange-500">
+                        <p class="text-sm text-gray-600 font-semibold mb-2">Siltation</p>
+                        <p id="feat-siltation" class="text-3xl font-bold text-orange-600">0.0</p>
+                        <p class="text-xs text-gray-500 mt-2">soil erosion from heavy rain</p>
+                    </div>
+
+                    <div class="feature-impact bg-white p-5 rounded-xl shadow-md border-t-4 border-amber-500">
+                        <p class="text-sm text-gray-600 font-semibold mb-2">River Management</p>
+                        <p id="feat-river" class="text-3xl font-bold text-amber-600">0.0</p>
+                        <p class="text-xs text-gray-500 mt-2">pressure on dams & drainage</p>
+                    </div>
+
+                    <div class="feature-impact bg-white p-5 rounded-xl shadow-md border-t-4 border-cyan-500">
+                        <p class="text-sm text-gray-600 font-semibold mb-2">Drainage Systems</p>
+                        <p id="feat-drainage" class="text-3xl font-bold text-cyan-600">0.0</p>
+                        <p class="text-xs text-gray-500 mt-2">water overflow capacity</p>
+                    </div>
+
+                    <div class="feature-impact bg-white p-5 rounded-xl shadow-md border-t-4 border-red-500">
+                        <p class="text-sm text-gray-600 font-semibold mb-2">Coastal Vulnerability</p>
+                        <p id="feat-coastal" class="text-3xl font-bold text-red-600">0.0</p>
+                        <p class="text-xs text-gray-500 mt-2">storm surge & wave impact</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rainfall Intensity Guide -->
+            <div class="bg-gradient-to-r from-blue-50 to-cyan-50 p-8 rounded-2xl border-2 border-cyan-300 mb-8">
+                <h2 class="text-2xl font-bold text-cyan-700 mb-6 flex items-center">
+                    <i class="bi bi-book mr-3"></i>Understanding Rainfall Impact
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="p-4 bg-green-50 rounded-xl border-l-4 border-green-500">
+                        <p class="font-bold text-green-700 mb-2"><i class="bi bi-droplet-fill mr-2"></i>Light Rainfall (0-50mm)</p>
+                        <p class="text-sm text-gray-700">Normal monsoon or local showers. Infrastructure remains stable. Suitable for agricultural activities.</p>
+                    </div>
+                    <div class="p-4 bg-yellow-50 rounded-xl border-l-4 border-yellow-500">
+                        <p class="font-bold text-yellow-700 mb-2"><i class="bi bi-droplet-fill mr-2"></i>Moderate Rainfall (50-150mm)</p>
+                        <p class="text-sm text-gray-700">Heavy monsoon or sustained rain. Increases river water levels. Drainage systems become stressed. Caution advised.</p>
+                    </div>
+                    <div class="p-4 bg-red-50 rounded-xl border-l-4 border-red-500">
+                        <p class="font-bold text-red-700 mb-2"><i class="bi bi-droplet-fill mr-2"></i>Heavy Rainfall (150-300mm)</p>
+                        <p class="text-sm text-gray-700">Extreme weather event. Rivers overflow. Siltation accelerates. Coastal areas face storm surge. Emergency protocols activate.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Info -->
+            <div class="text-center p-6 bg-gray-50 rounded-xl border border-gray-200">
+                <p class="text-sm text-gray-600">
+                    <i class="bi bi-lightbulb mr-2"></i>
+                    <strong>Tip:</strong> Try comparing the same rainfall across different regions to see how infrastructure & geography affect flood risk differently.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const rainfallSlider = document.getElementById('rainfallSlider');
+        const rainfallValue = document.getElementById('rainfallValue');
+        const regionSelect = document.getElementById('regionSelect');
+        const loadingSpinner = document.getElementById('LoadingSpinner');
+        const resultsContainer = document.getElementById('ResultsContainer');
+
+        // Debounce function for slider updates
+        let debounceTimer;
+        function debounce(func, delay) {
+            return function(...args) {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => func(...args), delay);
+            };
+        }
+
+        // Update rainfall display and call prediction
+        const updatePrediction = debounce(async function() {
+            const rainfall = parseFloat(rainfallSlider.value);
+            rainfallValue.textContent = rainfall;
+
+            // Update slider background gradient
+            const percentage = (rainfall / 300) * 100;
+            rainfallSlider.style.background = `linear-gradient(to right, #10b981 0%, #10b981 ${percentage}%, #ef4444 ${percentage}%, #ef4444 100%)`;
+
+            // Update slider thumb position color
+            if (rainfall < 50) {
+                rainfallSlider.style.accentColor = '#10b981';
+            } else if (rainfall < 150) {
+                rainfallSlider.style.accentColor = '#f59e0b';
+            } else {
+                rainfallSlider.style.accentColor = '#ef4444';
+            }
+
+            await predictScenario();
+        }, 300);
+
+        // Fetch prediction from backend
+        async function predictScenario() {
+            const rainfall = parseFloat(rainfallSlider.value);
+            const region = regionSelect.value;
+
+            loadingSpinner.classList.remove('hidden');
+            resultsContainer.classList.add('opacity-50');
+
+            try {
+                const response = await fetch('/predict_scenario', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        rainfall_mm: rainfall,
+                        region: region
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Prediction failed');
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
+                    updateResultsUI(data);
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to get prediction. Please check the console.');
+            } finally {
+                loadingSpinner.classList.add('hidden');
+                resultsContainer.classList.remove('opacity-50');
+            }
+        }
+
+        // Update UI with prediction results
+        function updateResultsUI(data) {
+            // Update Risk Badge
+            const riskBadge = document.getElementById('RiskBadge');
+            const messageDiv = document.getElementById('RiskMessage');
+            const riskClass = data.risk_class.toLowerCase();
+
+            riskBadge.classList.remove('risk-low', 'risk-medium', 'risk-high');
+
+            if (riskClass === 'high') {
+                riskBadge.classList.add('risk-high');
+                riskBadge.innerHTML = '<i class="bi bi-exclamation-circle mr-2"></i>HIGH RISK';
+                messageDiv.className = 'p-4 bg-red-100 rounded-lg border-l-4 border-red-500';
+            } else if (riskClass === 'medium') {
+                riskBadge.classList.add('risk-medium');
+                riskBadge.innerHTML = '<i class="bi bi-exclamation-triangle mr-2"></i>MEDIUM RISK';
+                messageDiv.className = 'p-4 bg-yellow-100 rounded-lg border-l-4 border-yellow-500';
+            } else {
+                riskBadge.classList.add('risk-low');
+                riskBadge.innerHTML = '<i class="bi bi-check-circle mr-2"></i>LOW RISK';
+                messageDiv.className = 'p-4 bg-green-100 rounded-lg border-l-4 border-green-500';
+            }
+
+            // Update message
+            messageDiv.innerHTML = `<p class="text-${riskClass === 'high' ? 'red' : riskClass === 'medium' ? 'yellow' : 'green'}-800">${data.message}</p>`;
+
+            // Update confidence bar
+            const confidence = data.confidence;
+            const confidenceBar = document.querySelector('#ConfidenceBar > div');
+            confidenceBar.style.width = confidence + '%';
+
+            // Color confidence bar based on risk
+            if (riskClass === 'high') {
+                confidenceBar.className = 'bg-red-500 h-full transition-all duration-500';
+            } else if (riskClass === 'medium') {
+                confidenceBar.className = 'bg-yellow-500 h-full transition-all duration-500';
+            } else {
+                confidenceBar.className = 'bg-green-500 h-full transition-all duration-500';
+            }
+
+            document.getElementById('ConfidenceText').textContent = confidence + '%';
+
+            // Update affected features
+            document.getElementById('feat-monsoon').textContent = data.affected_features.monsoonIntensity.toFixed(1);
+            document.getElementById('feat-siltation').textContent = data.affected_features.Siltation.toFixed(1);
+            document.getElementById('feat-river').textContent = data.affected_features.RiverManagement.toFixed(1);
+            document.getElementById('feat-drainage').textContent = data.affected_features.DrainageSystems.toFixed(1);
+            document.getElementById('feat-coastal').textContent = data.affected_features['Coastal vulnerability'].toFixed(1);
+        }
+
+        // Event listeners
+        rainfallSlider.addEventListener('input', updatePrediction);
+        regionSelect.addEventListener('change', updatePrediction);
+
+        // Initial prediction
+        predictScenario();
+    </script>
+</body>
+</html>
