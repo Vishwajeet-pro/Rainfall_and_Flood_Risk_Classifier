@@ -90,6 +90,24 @@ The roadmap feature helps users select resilience improvements such as:
 
 It computes before/after risk scores, estimated costs, timelines, and ROI-based ranking.
 
+## Demo 
+
+<img width="650" height="527" alt="Screenshot 2026-04-06 085657" src="https://github.com/user-attachments/assets/023d7c6d-ef79-4122-a9a3-e7343c756de0" />
+<img width="652" height="577" alt="Screenshot 2026-04-06 085742" src="https://github.com/user-attachments/assets/7fd6677c-341f-417e-84a6-b2d447ca53b5" />
+
+<br><br>
+<br><br>
+
+<img width="616" height="584" alt="Screenshot 2026-04-06 085907" src="https://github.com/user-attachments/assets/7d3c6a3d-727d-4fcc-9f98-8fdf2ce5d32b" />
+<br><br>
+<br><br>
+
+<img width="528" height="535" alt="Screenshot 2026-04-06 085951" src="https://github.com/user-attachments/assets/b1079d3a-8fb3-4d86-91a2-d69693f5af76" />
+<br><br>
+<br><br>
+<img width="627" height="318" alt="Screenshot 2026-04-06 090107" src="https://github.com/user-attachments/assets/06dfa99c-3b0c-4360-8a05-f50f50dfe9ef" />
+
+
 ## Notes
 
 - The model uses a classification target derived from `FloodProbability` in `data/flood.csv`.
